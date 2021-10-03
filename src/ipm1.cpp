@@ -1,6 +1,6 @@
 /*
 /*
-/* Based on work available here https://gist.github.com/anujonthemove/7b35b7c1e05f01dd11d74d94784c1e58
+/* Based on work available at: https://gist.github.com/anujonthemove/7b35b7c1e05f01dd11d74d94784c1e58
 /*
 */
 
