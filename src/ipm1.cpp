@@ -105,7 +105,7 @@ int main(int argc, char **argv)
   //pnh.param<std::string>("sub_topic", sub_topic, "usb_cam/image_raw"); 
   pnh.param<std::string>("sub_topic", sub_topic, "/ackermann_vehicle/camera/rgb/image_raw"); 
 
-  pnh.param<int>("width", frameWidth, 640); 
+  pnh.param<int>("width", frameWidth, 680); 
   pnh.param<int>("height", frameHeight, 480); 
 
   cv::namedWindow("Result", 1);
