@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-# based on https://github.com/joneivind/Self-Driving-Truck
-
 '''
 * ROS lane detector node ******************************
  
@@ -10,9 +8,12 @@
  Also contains an ArUco marker detector. 
  ROS functionality and center offset measure added 
  by Jon Eivind Stranden. 
+
  Most lane detection code courtesy of:
  https://github.com/vamsiramakrishnan/AdvancedLaneLines
+
  By Jon Eivind Stranden @ NTNU 2019
+
 ********************************************************
 '''
 
@@ -27,8 +28,8 @@ from collections import deque
 from math import ceil
 
 # ROS
-#import roslib
-#roslib.load_manifest('cv_lanetracker_aruco')
+import roslib
+roslib.load_manifest('cv_lanetracker_aruco')
 import sys
 import rospy
 from std_msgs.msg import String, Float32
@@ -73,25 +74,16 @@ disp_left = 0
 disp_right =0
 
 # Camera calibration settings
-#mtx = np.array([[708.4340756775686, 0, 317.9663110540382], [0, 724.3038241696117, 274.0865876256384], [0, 0, 1]])
-#dist = np.array([0.09702126218642344, -0.1836878268546886, 0.01359685879119158, 0.007942342964235989, 0])
-
-mtx = np.array([[564.1794158410564, 0, 339.585354927923], [0, 563.8954010066177, 240.8593643042658], [0, 0, 0]])
-dist = np.array([0.001593932351222154, -0.004430239769797794, 0.0002036043769375994, -3.141393111217492e-06, 0])
+mtx = np.array([[708.4340756775686, 0, 317.9663110540382], [0, 724.3038241696117, 274.0865876256384], [0, 0, 1]])
+dist = np.array([0.09702126218642344, -0.1836878268546886, 0.01359685879119158, 0.007942342964235989, 0])
 
 offset_from_lane_center_in_cm = 0.0
 
-# Callback function to receive image # xsi
-def message_RGB_ReceivedCallback(message):
-    global img_rbg
-    global have_img
-    global bridge
-    img_rbg = bridge.imgmsg_to_cv2(message, "bgr8")
-    have_img = True
 
 def filter_img(image):
 
     # For filtering out the black parts of the image
+
     image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
     #frame = cv2.medianBlur(frame,7)
 
@@ -102,7 +94,9 @@ def filter_img(image):
     upper_black = np.array([110])
     
     mask = cv2.inRange(image, lower_black, upper_black)
+
     background = np.full(image.shape, 255, dtype=np.uint8)
+
     res = cv2.bitwise_or(background, background, mask=mask)
 
     return res
@@ -122,17 +116,12 @@ def get_lane_center_offset(left_x, right_x, left_y, right_y, img_):
     midpoint_x = ((int(pts_right[0][0][0]) - int(pts_left[0][-1][0])) / 2 + int(pts_left[0][-1][0]))
     midpoint_x2 = ((int(pts_right[0][400][0]) - int(pts_left[0][-400][0])) / 2 + int(pts_left[0][-400][0]))
 
-    print(midpoint_x)
-    
-    #img_ = cv2.line(img_, (img_.shape[1]/2, 50), (midpoint_x, 50), color=(100, 200, 100), thickness=1, lineType=cv2.LINE_AA)
-    img_ = cv2.line(img_, (int(img_.shape[1]/2), 50), (int(midpoint_x), 50), color=(100, 200, 100), thickness=1, lineType=cv2.LINE_AA)
+    img_ = cv2.line(img_, (img_.shape[1]/2, 50), (midpoint_x, 50), color=(100, 200, 100), thickness=1, lineType=cv2.LINE_AA)
 
     #img_ = cv2.circle(img_, (midpoint_x2, 90), 12, color=(100, 200, 100), thickness=-1)
 
-    #img_ = cv2.circle(img_, (midpoint_x, 50), 12, color=(100, 200, 100), thickness=-1)
-    #img_ = cv2.circle(img_, (img_.shape[1]/2, 50), 8, color=(100, 200, 100), thickness=-1)
-    img_ = cv2.circle(img_, (int(midpoint_x), 50), 12, color=(100, 200, 100), thickness=-1)
-    img_ = cv2.circle(img_, (int(img_.shape[1]/2), 50), 8, color=(100, 200, 100), thickness=-1)
+    img_ = cv2.circle(img_, (midpoint_x, 50), 12, color=(100, 200, 100), thickness=-1)
+    img_ = cv2.circle(img_, (img_.shape[1]/2, 50), 8, color=(100, 200, 100), thickness=-1)
 
     error_offset = img_.shape[1]/2 - midpoint_x2
 
@@ -140,8 +129,7 @@ def get_lane_center_offset(left_x, right_x, left_y, right_y, img_):
 
     font = cv2.FONT_HERSHEY_SIMPLEX
     str1 = str(' OFFSET: ') + str(round(offset_cm,2)) + str(' CM')
-    #cv2.putText(img_, str1, (midpoint_x-120, 120), font, 1, (100, 200, 100), 2, cv2.LINE_AA)
-    cv2.putText(img_, str1, (int(midpoint_x)-120, 120), font, 1, (100, 200, 100), 2, cv2.LINE_AA)
+    cv2.putText(img_, str1, (midpoint_x-120, 120), font, 1, (100, 200, 100), 2, cv2.LINE_AA)
 
     # Range measure
     for i in range(1,10):
@@ -157,8 +145,11 @@ def get_lane_center_offset(left_x, right_x, left_y, right_y, img_):
 
 
 '''
+
 * CITE *********************************************************************
+
 *    Content of some functions has been modified
+
 *    Title: AdvancedLaneLines
 *    Author: Vamsi Ramakrishnan
 *    Date: Aug 2017
@@ -184,34 +175,18 @@ def calc_warp_points():
     :return: Source and Destination pointts 
     """
     src = np.float32 ([
-        [86, 174],
-        [447, 174],
-        [481, 282],
-        [2, 282]
+        [162, 479],
+        [210, 180],
+        [420, 180],
+        [480, 479]
     ])
 
     dst = np.float32 ([
-            [177,193],
-            [320,193],
-            [320,254],
-            [177,254]
+            [172, 530],
+            [165, 20],
+            [493, 20],
+            [470, 530]
         ])
-
-
-    src = np.float32 ([
-        [86, 174],
-        [447, 174],
-        [481, 282],
-        [2, 282]
-    ])
-
-    dst = np.float32 ([
-            [177,193],
-            [320,193],
-            [320,254],
-            [177,254]
-        ])
-
     return src, dst
 
 
@@ -231,6 +206,7 @@ def calc_transform(src_, dst_):
 # Get perspective transform 
 def perspective_transform(M_, img_):
     """
+
     :param M_: Perspective Matrix 
     :param img_ : Input Image
     :return: Transformed Image 
@@ -246,6 +222,7 @@ def perspective_transform(M_, img_):
 # Inverse Perspective Transform 
 def inv_perspective_transform(Minv_, img_):
     """
+
     :param M_: Inverse Perspective Transform Matrix
     :param img_: Input Image
     :return: Transformed Image
@@ -643,6 +620,7 @@ def lanewidth_sanity(left_fit, right_fit, img_):
 
 def lanewidth_rationalize(left_fit, confidence_index_l, right_fit, confidence_index_r, img_):
     """
+
     :param left_fit: 
     :param confidence_index_l: 
     :param right_fit: 
@@ -667,6 +645,7 @@ def lanewidth_rationalize(left_fit, confidence_index_l, right_fit, confidence_in
 # Master Function that processes video image by image
 def process_video(img):
     """
+
     :param img: 
     :return: Processed Image that is written with appropriate polygon
     """
@@ -696,12 +675,6 @@ def process_video(img):
     # Perform Camera Calibration and get Distortion Coefficients #
     undistorted_img = undistort_image(mtx, dist, img)
 
-    cv2.imshow('frame4',img)
-    cv2.waitKey(1)
-
-    cv2.imshow('frame5',undistorted_img)
-    cv2.waitKey(1)
-
     # Calculate Bird' Eye Transform #
     if not isPerspectiveCompute:
         src_, dst_ = calc_warp_points()
@@ -711,11 +684,6 @@ def process_video(img):
 
     # Get Bird's Eye View #
     warped = perspective_transform(m, undistorted_img)
-    
-    # xsi
-    cv2.imshow('frame3',warped)
-    cv2.waitKey(1)
-
     binary_warped = filter_img(warped)
     
     # Lane Search
@@ -880,9 +848,9 @@ def main():
     
     global offset_from_lane_center_in_cm
 
-    ##cap = cv2.VideoCapture(1)
-    ##cap.set(3,640)
-    ##cap.set(4,480)
+    cap = cv2.VideoCapture(1)
+    cap.set(3,640)
+    cap.set(4,480)
     #cap.set(cv2.CAP_PROP_AUTOFOCUS, 0) # turn the autofocus off
     #cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.25) # turn of auto exposure
 
@@ -890,53 +858,20 @@ def main():
     image_pub = rospy.Publisher("car_vision/image_raw", Image, queue_size=10)
     offset_pub = rospy.Publisher("car_vision/lane_center_offset_cm", Float32, queue_size=10)
 
-    # xsi bof
-    # Global variables
-    global bridge
-    global img_rbg
-    global have_img
-    # Create an object of the CvBridge class
-    bridge = CvBridge()
-
-    image_raw_topic = rospy.get_param('~image_raw_topic', '/ackermann_vehicle/camera/rgb/image_raw')
-    rospy.Subscriber(image_raw_topic, Image, message_RGB_ReceivedCallback)
-
-    have_img = False
-    image_view = True
-
-    # xsi eof
-
     rate = rospy.Rate(10) # 30hz
 
     offset_msg = Float32()
 
     while not rospy.is_shutdown():
 
-        ##ret, frame = cap.read()
-
-        if not have_img:
-            rate.sleep()
-            continue 
-
-        frame = img_rbg
+        ret, frame = cap.read()
 
         # Add lanes to img
-        #res = aruco_marker_detector(process_video(frame))
+        res = aruco_marker_detector(process_video(frame))
         res = process_video(frame)
 
         # Get offset from center lane
         offset_msg.data = offset_from_lane_center_in_cm
-
-        # xsi bof
-        if image_view:
-            # Display the resulting frame
-            cv2.imshow('frame', res)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-
-        #img_msg = bridge.cv2_to_imgmsg(res, encoding="passthrough") 
-        #image_pub.publish(img_msg)
-        # xsi eof
 
         # Convert image to ROS Image format
         #img_msg = CvBridge().cv2_to_imgmsg(res, encoding="passthrough")
@@ -962,21 +897,26 @@ if __name__ == '__main__':
 # For debugging
 '''
 if __name__ == "__main__":
+
     cap = cv2.VideoCapture(1)
     cap.set(3,640)
     cap.set(4,480)
     cap.set(cv2.CAP_PROP_AUTOFOCUS, 0) # turn the autofocus off
     cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.25) # turn of auto exposure
+
     while(True):
         # Capture image from webcam
         ret, frame = cap.read()
+
         # Display the image
         #cv2.imshow('frame', aruco_marker_detector(frame))
 	cv2.imshow('frame', process_video(frame))
 	#process_video(frame)
 	#cv2.imshow('frame', frame)
+
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
+
     # When everything done, release the capture
     cap.release()
     cv2.destroyAllWindows()
